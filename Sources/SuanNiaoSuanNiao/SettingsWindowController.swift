@@ -25,7 +25,7 @@ final class SettingsWindowController: NSWindowController {
         self.settingsStore = settingsStore
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1040, height: 720),
+            contentRect: NSRect(x: 0, y: 0, width: 1020, height: 700),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -34,7 +34,8 @@ final class SettingsWindowController: NSWindowController {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
-        window.toolbarStyle = .unified
+        window.isMovableByWindowBackground = true
+        window.toolbarStyle = .preference
         window.center()
 
         super.init(window: window)

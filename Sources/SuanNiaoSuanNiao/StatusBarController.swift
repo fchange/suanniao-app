@@ -19,16 +19,17 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         guard let button = statusItem.button else { return }
 
         let image = loadStatusBarImage()
+        let showsImage = image != nil
         button.image = image
-        button.imagePosition = image == nil ? .imageOnly : .imageLeading
+        button.imagePosition = showsImage ? .imageOnly : .noImage
         button.imageScaling = .scaleProportionallyDown
         button.toolTip = "蒜鸟蒜鸟"
         button.target = self
         button.action = #selector(handleStatusItemClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
-        // Keep a visible affordance even when the image is too thin for menu bar rendering.
-        button.title = "蒜"
+        // Keep a visible fallback when the icon cannot be loaded.
+        button.title = showsImage ? "" : "蒜"
         button.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
         button.contentTintColor = .labelColor
     }

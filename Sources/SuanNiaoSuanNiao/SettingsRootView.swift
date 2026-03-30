@@ -1,4 +1,18 @@
+import AppKit
 import SwiftUI
+
+private enum SettingsUI {
+    static let windowBackground = Color(red: 0.97, green: 0.97, blue: 0.98)
+    static let cardBackground = Color.white
+    static let sidebarBackground = Color.white
+    static let rowHighlight = Color(red: 0.94, green: 0.94, blue: 0.95)
+    static let border = Color.black.opacity(0.08)
+    static let separator = Color.black.opacity(0.07)
+    static let primaryText = Color(nsColor: .labelColor)
+    static let secondaryText = Color(nsColor: .secondaryLabelColor)
+    static let tertiaryText = Color(nsColor: .tertiaryLabelColor)
+    static let accent = Color(nsColor: .controlAccentColor)
+}
 
 struct SettingsRootView: View {
     @ObservedObject var settingsStore: SettingsStore
@@ -6,80 +20,76 @@ struct SettingsRootView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.98, green: 0.93, blue: 0.90),
-                    Color(red: 0.92, green: 0.96, blue: 1.0),
-                    Color(red: 0.94, green: 0.93, blue: 0.99)
-                ],
-                startPoint: .bottomLeading,
-                endPoint: .topTrailing
-            )
-            .ignoresSafeArea()
-
-            RoundedRectangle(cornerRadius: 36, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 36, style: .continuous)
-                        .stroke(Color.white.opacity(0.55), lineWidth: 1)
-                )
-                .padding(22)
+            SettingsUI.windowBackground
+                .ignoresSafeArea()
 
             HStack(spacing: 0) {
                 sidebar
-                    .frame(width: 260)
+                    .frame(width: 272)
 
-                Divider()
-                    .overlay(Color.black.opacity(0.05))
+                Rectangle()
+                    .fill(SettingsUI.separator)
+                    .frame(width: 1)
 
-                detail
+                detailContainer
             }
-            .padding(22)
+            .background(SettingsUI.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(SettingsUI.border, lineWidth: 1)
+            )
+            .padding(24)
         }
     }
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 16) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(.regularMaterial)
-                        .frame(width: 76, height: 76)
-
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 12) {
+                Group {
                     if let image = ResourceLocator.brandImage() {
                         Image(nsImage: image)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 44, height: 44)
+                            .padding(6)
                     } else {
-                        Image(systemName: "bird")
-                            .font(.system(size: 28, weight: .semibold))
+                        Image(systemName: "bird.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(SettingsUI.primaryText)
                     }
                 }
+                .frame(width: 40, height: 40)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(SettingsUI.border, lineWidth: 1)
+                )
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("蒜鸟蒜鸟")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                    Text("放一放，莫上头。")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(SettingsUI.primaryText)
+
+                    Text("设置")
+                        .font(.system(size: 12))
+                        .foregroundStyle(SettingsUI.secondaryText)
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 18)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
 
-            VStack(spacing: 10) {
-                sidebarButton(for: .appearance, icon: "wand.and.stars")
-                sidebarButton(for: .audio, icon: "speaker.wave.2")
-                sidebarButton(for: .about, icon: "heart.text.square")
+            VStack(spacing: 4) {
+                ForEach(SettingsWindowController.Section.allCases, id: \.self) { section in
+                    sidebarButton(for: section)
+                }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
+        .background(SettingsUI.sidebarBackground)
     }
 
-    private var detail: some View {
+    private var detailContainer: some View {
         Group {
             switch selection.section {
             case .appearance:
@@ -91,30 +101,34 @@ struct SettingsRootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.white)
     }
 
-    private func sidebarButton(for section: SettingsWindowController.Section, icon: String) -> some View {
-        Button {
-            selection.section = section
+    private func sidebarButton(for section: SettingsWindowController.Section) -> some View {
+        let isSelected = selection.section == section
+
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                selection.section = section
+            }
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 24)
+                Image(systemName: section.icon)
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(isSelected ? SettingsUI.primaryText : SettingsUI.secondaryText)
+                    .frame(width: 22)
+
                 Text(section.title)
-                    .font(.system(size: 18, weight: .semibold))
-                Spacer()
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(SettingsUI.primaryText)
+
+                Spacer(minLength: 8)
             }
-            .foregroundStyle(Color.primary)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 16)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
             .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(selection.section == section ? Color.white.opacity(0.74) : .clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(selection.section == section ? Color.white.opacity(0.7) : .clear, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? SettingsUI.rowHighlight : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -126,213 +140,93 @@ private struct AppearanceSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header(title: "提醒外观", subtitle: "重写弹窗视觉，并把控制项集中到这里。")
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsHeader(title: "提醒外观")
 
-                previewCard
+                SettingsTable {
+                    SettingsPreviewRow(
+                        title: "实时预览",
+                        subtitle: "当前提醒样式会立即显示在这里。",
+                        style: settingsStore.reminderStyle,
+                        brandImage: ResourceLocator.brandImage()
+                    )
 
-                settingsCard {
-                    settingRow(
-                        title: "提醒显示图标",
-                        subtitle: "打开后在提醒浮窗里展示品牌图标。"
-                    ) {
-                        Toggle("", isOn: $settingsStore.showReminderIcon)
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                    }
-
-                    settingRow(
+                    SettingsSliderRow(
                         title: "提醒窗口大小",
-                        subtitle: "调节整体卡片比例，不改变文字内容。"
-                    ) {
-                        VStack(alignment: .trailing, spacing: 8) {
-                            Slider(
-                                value: Binding(
-                                    get: { settingsStore.windowScale },
-                                    set: { settingsStore.windowScale = $0 }
-                                ),
-                                in: 0.8...1.55
-                            )
-                            .frame(width: 240)
+                        value: Binding(
+                            get: { settingsStore.windowScale },
+                            set: { settingsStore.windowScale = $0 }
+                        ),
+                        range: 0.8...1.55,
+                        displayValue: "\(Int((settingsStore.windowScale * 100).rounded()))%"
+                    )
 
-                            Text("\(Int((settingsStore.windowScale * 100).rounded()))%")
-                                .font(.system(.footnote, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    settingRow(
+                    SettingsSliderRow(
                         title: "字体大小",
-                        subtitle: "控制“蒜鸟蒜鸟”的主视觉尺寸。"
-                    ) {
-                        VStack(alignment: .trailing, spacing: 8) {
-                            Slider(
-                                value: Binding(
-                                    get: { settingsStore.fontSize },
-                                    set: { settingsStore.fontSize = $0 }
-                                ),
-                                in: 44...108
-                            )
-                            .frame(width: 240)
+                        value: Binding(
+                            get: { settingsStore.fontSize },
+                            set: { settingsStore.fontSize = $0 }
+                        ),
+                        range: 44...108,
+                        displayValue: "\(Int(settingsStore.fontSize.rounded())) pt"
+                    )
 
-                            Text("\(Int(settingsStore.fontSize.rounded())) pt")
-                                .font(.system(.footnote, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    settingRow(
+                    SettingsSliderRow(
                         title: "文字透明度",
-                        subtitle: "让提醒更通透，或者更醒目。"
-                    ) {
-                        VStack(alignment: .trailing, spacing: 8) {
-                            Slider(
-                                value: Binding(
-                                    get: { settingsStore.textOpacity },
-                                    set: { settingsStore.textOpacity = $0 }
-                                ),
-                                in: 0.25...1.0
-                            )
-                            .frame(width: 240)
+                        value: Binding(
+                            get: { settingsStore.textOpacity },
+                            set: { settingsStore.textOpacity = $0 }
+                        ),
+                        range: 0.25...1.0,
+                        displayValue: "\(Int((settingsStore.textOpacity * 100).rounded()))%"
+                    )
 
-                            Text("\(Int((settingsStore.textOpacity * 100).rounded()))%")
-                                .font(.system(.footnote, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                    SettingsToggleRow(
+                        title: "显示品牌图标",
+                        isOn: $settingsStore.showReminderIcon
+                    )
 
-                    settingRow(
+                    SettingsColorRow(
                         title: "文字颜色",
-                        subtitle: "建议保留偏暖白，整体更轻。"
-                    ) {
-                        VStack(alignment: .trailing, spacing: 8) {
-                            ColorPicker(
-                                "",
-                                selection: Binding(
-                                    get: { settingsStore.textColor.swiftUIColor },
-                                    set: { settingsStore.textColor = NSColor($0) ?? settingsStore.textColor }
-                                ),
-                                supportsOpacity: false
-                            )
-                            .labelsHidden()
+                        selection: Binding(
+                            get: { settingsStore.textColor.swiftUIColor },
+                            set: { settingsStore.textColor = NSColor($0) ?? settingsStore.textColor }
+                        ),
+                        hex: settingsStore.textColor.hexString
+                    )
 
-                            Text(settingsStore.textColor.hexString)
-                                .font(.system(.footnote, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    settingRow(
+                    SettingsColorRow(
                         title: "提醒背景色",
-                        subtitle: "控制弹窗卡片底色。"
-                    ) {
-                        VStack(alignment: .trailing, spacing: 8) {
-                            ColorPicker(
-                                "",
-                                selection: Binding(
-                                    get: { settingsStore.backgroundColor.swiftUIColor },
-                                    set: { settingsStore.backgroundColor = NSColor($0) ?? settingsStore.backgroundColor }
-                                ),
-                                supportsOpacity: false
-                            )
-                            .labelsHidden()
+                        selection: Binding(
+                            get: { settingsStore.backgroundColor.swiftUIColor },
+                            set: { settingsStore.backgroundColor = NSColor($0) ?? settingsStore.backgroundColor }
+                        ),
+                        hex: settingsStore.backgroundColor.hexString
+                    )
 
-                            Text(settingsStore.backgroundColor.hexString)
-                                .font(.system(.footnote, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    settingRow(
+                    SettingsSliderRow(
                         title: "背景透明度",
-                        subtitle: "决定背景色覆盖玻璃材质的程度。"
-                    ) {
-                        VStack(alignment: .trailing, spacing: 8) {
-                            Slider(
-                                value: Binding(
-                                    get: { settingsStore.backgroundOpacity },
-                                    set: { settingsStore.backgroundOpacity = $0 }
-                                ),
-                                in: 0.2...1.0
-                            )
-                            .frame(width: 240)
+                        value: Binding(
+                            get: { settingsStore.backgroundOpacity },
+                            set: { settingsStore.backgroundOpacity = $0 }
+                        ),
+                        range: 0.2...1.0,
+                        displayValue: "\(Int((settingsStore.backgroundOpacity * 100).rounded()))%"
+                    )
 
-                            Text("\(Int((settingsStore.backgroundOpacity * 100).rounded()))%")
-                                .font(.system(.footnote, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        }
+                    PresetPaletteRow(
+                        title: "颜色预设",
+                        presets: ReminderColorPreset.morandiPalette,
+                        selectedHex: settingsStore.backgroundColor.hexString
+                    ) { preset in
+                        settingsStore.applyPreset(preset)
                     }
                 }
-
-                presetCard
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 34)
-            .padding(.vertical, 28)
         }
         .scrollIndicators(.hidden)
-    }
-
-    private var previewCard: some View {
-        settingsSectionCard {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("实时预览")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-
-                ReminderPanelContentView(
-                    style: settingsStore.reminderStyle,
-                    brandImage: ResourceLocator.brandImage()
-                )
-                .frame(height: 260)
-            }
-        }
-    }
-
-    private var presetCard: some View {
-        settingsSectionCard {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("莫兰迪预设")
-                    .font(.system(size: 18, weight: .semibold))
-
-                Text("快速切换一组更柔和的背景色。")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
-
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
-                    ForEach(ReminderColorPreset.morandiPalette) { preset in
-                        Button {
-                            settingsStore.applyPreset(preset)
-                        } label: {
-                            HStack(spacing: 12) {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(preset.color.swiftUIColor)
-                                    .frame(width: 34, height: 34)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .stroke(Color.white.opacity(0.6), lineWidth: 1)
-                                    )
-
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(preset.name)
-                                        .font(.system(size: 15, weight: .semibold))
-                                    Text(preset.color.hexString)
-                                        .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-                            }
-                            .padding(14)
-                            .background(
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .fill(Color.white.opacity(0.52))
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -340,147 +234,352 @@ private struct AudioSettingsView: View {
     @ObservedObject var settingsStore: SettingsStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            header(title: "声音", subtitle: "控制点击菜单栏后的语音提醒。")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsHeader(title: "声音")
 
-            settingsSectionCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    settingRow(
-                        title: "音频音量",
-                        subtitle: "再次点击时会停止旧播放，并从头开始。"
-                    ) {
-                        VStack(alignment: .trailing, spacing: 8) {
-                            Slider(
-                                value: Binding(
-                                    get: { Double(settingsStore.audioVolume) },
-                                    set: { settingsStore.audioVolume = Float($0) }
-                                ),
-                                in: 0...1
-                            )
-                            .frame(width: 240)
+                SettingsTable {
+                    SettingsSliderRow(
+                        title: "提醒音量",
+                        value: Binding(
+                            get: { Double(settingsStore.audioVolume) },
+                            set: { settingsStore.audioVolume = Float($0) }
+                        ),
+                        range: 0...1,
+                        displayValue: "\(Int((CGFloat(settingsStore.audioVolume) * 100).rounded()))%"
+                    )
 
-                            Text("\(Int((CGFloat(settingsStore.audioVolume) * 100).rounded()))%")
-                                .font(.system(.footnote, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                    ReadOnlyRow(
+                        title: "音频文件",
+                        value: "Resources/Audio/suanniao.mp3"
+                    )
+
+                    ReadOnlyRow(
+                        title: "播放方式",
+                        value: "点击菜单栏图标时播放"
+                    )
+
+                    ReadOnlyRow(
+                        title: "替换说明",
+                        value: "保持文件名不变即可"
+                    )
                 }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
             }
-
-            settingsSectionCard {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("当前资源")
-                        .font(.system(size: 18, weight: .semibold))
-                    Text("播放文件路径约定为 `Resources/Audio/suanniao.mp3`。缺失时会优雅降级，不会崩溃。")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
         }
-        .padding(.horizontal, 34)
-        .padding(.vertical, 28)
+        .scrollIndicators(.hidden)
     }
 }
 
 private struct AboutSettingsView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            header(title: "关于『蒜鸟蒜鸟』", subtitle: "一只来自武汉方言文化的小提醒。")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsHeader(title: "关于蒜鸟")
 
-            settingsSectionCard {
-                HStack(alignment: .top, spacing: 22) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                            .fill(.regularMaterial)
-                            .frame(width: 96, height: 96)
+                SettingsTable {
+                    ReadOnlyRow(
+                        title: "应用名称",
+                        value: "蒜鸟蒜鸟"
+                    )
 
-                        if let image = ResourceLocator.brandImage() {
-                            Image(nsImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 58, height: 58)
-                        } else {
-                            Image(systemName: "bird")
-                                .font(.system(size: 34, weight: .semibold))
+                    ReadOnlyRow(
+                        title: "版本",
+                        value: appVersionText
+                    )
+
+                    ReadOnlyRow(
+                        title: "平台",
+                        value: "macOS 14 及以上"
+                    )
+
+                    TextBlockRow(
+                        title: "说明",
+                        text: "“蒜鸟蒜鸟”来自武汉方言里的“算了”。这个应用希望在情绪上头的时候，用更柔和的方式提醒你停一下。"
+                    )
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private var appVersionText: String {
+        let bundle = Bundle.main
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return "\(version) (\(build))"
+    }
+}
+
+private struct SettingsHeader: View {
+    let title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title)
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(SettingsUI.primaryText)
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
+                .padding(.bottom, 20)
+
+            Rectangle()
+                .fill(SettingsUI.separator)
+                .frame(height: 1)
+        }
+    }
+}
+
+private struct SettingsTable<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            content
+        }
+        .background(Color.white)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(SettingsUI.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.top, 24)
+    }
+}
+
+private struct SettingsRowContainer<Content: View>: View {
+    let content: Content
+    var showsDivider: Bool = true
+
+    init(showsDivider: Bool = true, @ViewBuilder content: () -> Content) {
+        self.showsDivider = showsDivider
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            content
+                .padding(.horizontal, 22)
+                .padding(.vertical, 20)
+
+            if showsDivider {
+                Rectangle()
+                    .fill(SettingsUI.separator)
+                    .frame(height: 1)
+            }
+        }
+    }
+}
+
+private struct SettingsPreviewRow: View {
+    let title: String
+    let subtitle: String
+    let style: ReminderStyle
+    let brandImage: NSImage?
+
+    var body: some View {
+        SettingsRowContainer {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(SettingsUI.primaryText)
+
+                    Spacer(minLength: 12)
+
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundStyle(SettingsUI.secondaryText)
+                }
+
+                ReminderPanelContentView(style: style, brandImage: brandImage)
+                    .frame(height: 230)
+            }
+        }
+    }
+}
+
+private struct SettingsSliderRow<V>: View where V: BinaryFloatingPoint, V.Stride: BinaryFloatingPoint {
+    let title: String
+    let value: Binding<V>
+    let range: ClosedRange<V>
+    let displayValue: String
+
+    var body: some View {
+        SettingsRowContainer {
+            HStack(alignment: .center, spacing: 24) {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(SettingsUI.primaryText)
+
+                Spacer(minLength: 20)
+
+                HStack(spacing: 14) {
+                    Slider(value: value, in: range)
+                        .frame(width: 220)
+
+                    Text(displayValue)
+                        .font(.system(size: 13))
+                        .foregroundStyle(SettingsUI.secondaryText)
+                        .frame(width: 70, alignment: .trailing)
+                }
+            }
+        }
+    }
+}
+
+private struct SettingsToggleRow: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        SettingsRowContainer {
+            HStack {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(SettingsUI.primaryText)
+
+                Spacer(minLength: 20)
+
+                Toggle("", isOn: $isOn)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+            }
+        }
+    }
+}
+
+private struct SettingsColorRow: View {
+    let title: String
+    let selection: Binding<Color>
+    let hex: String
+
+    var body: some View {
+        SettingsRowContainer {
+            HStack {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(SettingsUI.primaryText)
+
+                Spacer(minLength: 20)
+
+                HStack(spacing: 12) {
+                    Text(hex)
+                        .font(.system(size: 13))
+                        .foregroundStyle(SettingsUI.secondaryText)
+
+                    ColorPicker("", selection: selection, supportsOpacity: false)
+                        .labelsHidden()
+                }
+            }
+        }
+    }
+}
+
+private struct PresetPaletteRow: View {
+    let title: String
+    let presets: [ReminderColorPreset]
+    let selectedHex: String
+    let action: (ReminderColorPreset) -> Void
+
+    var body: some View {
+        SettingsRowContainer(showsDivider: false) {
+            HStack(alignment: .top, spacing: 20) {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(SettingsUI.primaryText)
+                    .padding(.top, 4)
+
+                Spacer(minLength: 20)
+
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(44), spacing: 10), count: 3), spacing: 10) {
+                    ForEach(presets) { preset in
+                        let isSelected = preset.color.hexString == selectedHex
+
+                        Button {
+                            action(preset)
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(preset.color.swiftUIColor)
+
+                                Text("蒜")
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundStyle(preset.textColor.swiftUIColor)
+                            }
+                            .frame(width: 44, height: 44)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(isSelected ? SettingsUI.primaryText : SettingsUI.border, lineWidth: isSelected ? 2 : 1)
+                            )
                         }
-                    }
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("蒜鸟蒜鸟")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                        Text("“蒜鸟”来自武汉方言里的“算了”，像一句带着分寸感的安抚：别争了，先放下，莫上头。")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.secondary)
-                        Text("这些年它也慢慢成了网络热词，带着一点武汉文化气质，也带着一点松弛和治愈。")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
+                        .help(preset.name)
                     }
                 }
             }
-
-            Spacer()
-        }
-        .padding(.horizontal, 34)
-        .padding(.vertical, 28)
-    }
-}
-
-private func header(title: String, subtitle: String) -> some View {
-    VStack(alignment: .leading, spacing: 8) {
-        Text(title)
-            .font(.system(size: 42, weight: .bold, design: .rounded))
-        Text(subtitle)
-            .font(.system(size: 16))
-            .foregroundStyle(.secondary)
-    }
-}
-
-private func settingsSectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-    VStack(alignment: .leading, spacing: 0) {
-        content()
-    }
-    .padding(24)
-    .background(
-        RoundedRectangle(cornerRadius: 30, style: .continuous)
-            .fill(.regularMaterial)
-    )
-    .overlay(
-        RoundedRectangle(cornerRadius: 30, style: .continuous)
-            .stroke(Color.white.opacity(0.55), lineWidth: 1)
-    )
-}
-
-private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-    settingsSectionCard {
-        VStack(spacing: 0) {
-            content()
         }
     }
 }
 
-private func settingRow<Accessory: View>(
-    title: String,
-    subtitle: String,
-    @ViewBuilder accessory: () -> Accessory
-) -> some View {
-    HStack(alignment: .center, spacing: 20) {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 18, weight: .semibold))
-            Text(subtitle)
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-        }
+private struct ReadOnlyRow: View {
+    let title: String
+    let value: String
 
-        Spacer(minLength: 24)
-        accessory()
+    var body: some View {
+        SettingsRowContainer {
+            HStack {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(SettingsUI.primaryText)
+
+                Spacer(minLength: 20)
+
+                Text(value)
+                    .font(.system(size: 15))
+                    .foregroundStyle(SettingsUI.secondaryText)
+            }
+        }
     }
-    .padding(.vertical, 18)
-    .overlay(alignment: .bottom) {
-        Divider()
-            .opacity(0.5)
+}
+
+private struct TextBlockRow: View {
+    let title: String
+    let text: String
+
+    var body: some View {
+        SettingsRowContainer(showsDivider: false) {
+            HStack(alignment: .top, spacing: 20) {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(SettingsUI.primaryText)
+
+                Spacer(minLength: 20)
+
+                Text(text)
+                    .font(.system(size: 15))
+                    .foregroundStyle(SettingsUI.secondaryText)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 360, alignment: .trailing)
+            }
+        }
+    }
+}
+
+private extension SettingsWindowController.Section {
+    var icon: String {
+        switch self {
+        case .appearance: "slider.horizontal.3"
+        case .audio: "speaker.wave.2"
+        case .about: "info.circle"
+        }
     }
 }
 

@@ -16,6 +16,14 @@ struct ReminderColorPreset: Identifiable, Equatable {
     let id: String
     let name: String
     let color: NSColor
+    let textColor: NSColor
+
+    init(id: String, name: String, color: NSColor, textColor: NSColor? = nil) {
+        self.id = id
+        self.name = name
+        self.color = color
+        self.textColor = textColor ?? color.recommendedPresetTextColor
+    }
 
     static let morandiPalette: [ReminderColorPreset] = [
         .init(id: "mist-apricot", name: "杏雾", color: NSColor(calibratedRed: 0.90, green: 0.82, blue: 0.77, alpha: 1)),
@@ -164,6 +172,7 @@ final class SettingsStore: ObservableObject {
 
     func applyPreset(_ preset: ReminderColorPreset) {
         backgroundColor = preset.color
+        textColor = preset.textColor
     }
 
     private func notifyChange() {
@@ -196,11 +205,69 @@ extension NSColor {
         Color(nsColor: self)
     }
 
+    var recommendedPresetTextColor: NSColor {
+        let fallbackDark = NSColor(calibratedWhite: 0.15, alpha: 1)
+        let fallbackLight = NSColor(calibratedWhite: 0.98, alpha: 1)
+
+        guard let rgb = usingColorSpace(.deviceRGB) else { return fallbackDark }
+
+        var hue: CGFloat = 0
+        var saturation: CGFloat = 0
+        var brightness: CGFloat = 0
+        var alpha: CGFloat = 0
+        rgb.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+
+        let isLightBackground = rgb.relativeLuminance > 0.58
+        let complementaryHue = (hue + 0.5).truncatingRemainder(dividingBy: 1)
+        let candidateSaturation = min(max(saturation * 0.9 + 0.12, 0.18), 0.72)
+        let candidateBrightness = isLightBackground
+            ? min(max(brightness * 0.34, 0.18), 0.36)
+            : min(max(0.88 - brightness * 0.18, 0.72), 0.96)
+        let candidate = NSColor(
+            calibratedHue: complementaryHue,
+            saturation: candidateSaturation,
+            brightness: candidateBrightness,
+            alpha: 1
+        )
+
+        let candidateContrast = candidate.contrastRatio(against: rgb)
+        if candidateContrast >= 4.5 {
+            return candidate
+        }
+
+        let darkContrast = fallbackDark.contrastRatio(against: rgb)
+        let lightContrast = fallbackLight.contrastRatio(against: rgb)
+        return darkContrast >= lightContrast ? fallbackDark : fallbackLight
+    }
+
     var hexString: String {
         guard let rgb = usingColorSpace(.deviceRGB) else { return "#FFFFFF" }
         let red = Int((rgb.redComponent * 255).rounded())
         let green = Int((rgb.greenComponent * 255).rounded())
         let blue = Int((rgb.blueComponent * 255).rounded())
         return String(format: "#%02X%02X%02X", red, green, blue)
+    }
+
+    private var relativeLuminance: CGFloat {
+        func linearize(_ value: CGFloat) -> CGFloat {
+            if value <= 0.03928 {
+                return value / 12.92
+            }
+            return pow((value + 0.055) / 1.055, 2.4)
+        }
+
+        guard let rgb = usingColorSpace(.deviceRGB) else { return 0 }
+        let red = linearize(rgb.redComponent)
+        let green = linearize(rgb.greenComponent)
+        let blue = linearize(rgb.blueComponent)
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+    }
+
+    private func contrastRatio(against color: NSColor) -> CGFloat {
+        let lhs = relativeLuminance
+        let rhs = color.relativeLuminance
+        let lighter = max(lhs, rhs)
+        let darker = min(lhs, rhs)
+        return (lighter + 0.05) / (darker + 0.05)
     }
 }
