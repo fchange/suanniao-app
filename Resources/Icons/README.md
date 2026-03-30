@@ -1,6 +1,12 @@
-To replace the status bar icon, add one of these files:
+The bundled icon variants are:
+
+- `Resources/BrandMarkFilledCutout.png`
+- `Resources/BrandMarkOutline.png`
+- `Resources/BrandMarkGradient.png`
+
+To override the status bar icon with a custom asset, add one of these files:
 
 - `Resources/StatusBarIcon.pdf`
 - `Resources/StatusBarIcon.png`
 
-The image should be a monochrome template-style icon for best menu bar rendering.
+The app now uses `Resources/BrandMarkFilledCutout.png` as the default menu bar icon.

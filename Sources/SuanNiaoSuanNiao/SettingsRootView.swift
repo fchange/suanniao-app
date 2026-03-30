@@ -186,6 +186,14 @@ private struct AppearanceSettingsView: View {
                         isOn: $settingsStore.showReminderIcon
                     )
 
+                    SettingsSegmentedRow(
+                        title: "磨砂玻璃",
+                        selection: $settingsStore.glassMode,
+                        options: ReminderGlassMode.allCases
+                    ) { mode in
+                        mode.title
+                    }
+
                     SettingsColorRow(
                         title: "文字颜色",
                         selection: Binding(
@@ -400,7 +408,7 @@ private struct SettingsPreviewRow: View {
                 }
 
                 ReminderPanelContentView(style: style, brandImage: brandImage)
-                    .frame(height: 230)
+                    .frame(height: 248)
             }
         }
     }
@@ -451,6 +459,34 @@ private struct SettingsToggleRow: View {
                 Toggle("", isOn: $isOn)
                     .labelsHidden()
                     .toggleStyle(.switch)
+            }
+        }
+    }
+}
+
+private struct SettingsSegmentedRow<Option>: View where Option: Hashable {
+    let title: String
+    @Binding var selection: Option
+    let options: [Option]
+    let label: (Option) -> String
+
+    var body: some View {
+        SettingsRowContainer {
+            HStack {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(SettingsUI.primaryText)
+
+                Spacer(minLength: 20)
+
+                Picker(title, selection: $selection) {
+                    ForEach(options, id: \.self) { option in
+                        Text(label(option)).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 240)
+                .labelsHidden()
             }
         }
     }

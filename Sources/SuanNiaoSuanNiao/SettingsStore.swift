@@ -10,6 +10,21 @@ struct ReminderStyle {
     let windowScale: CGFloat
     let backgroundColor: NSColor
     let backgroundOpacity: CGFloat
+    let glassMode: ReminderGlassMode
+}
+
+enum ReminderGlassMode: String, CaseIterable {
+    case off
+    case soft
+    case vivid
+
+    var title: String {
+        switch self {
+        case .off: "关闭"
+        case .soft: "柔和"
+        case .vivid: "明显"
+        }
+    }
 }
 
 struct ReminderColorPreset: Identifiable, Equatable {
@@ -52,6 +67,7 @@ final class SettingsStore: ObservableObject {
         static let windowScale = "settings.windowScale"
         static let backgroundColor = "settings.backgroundColor"
         static let backgroundOpacity = "settings.backgroundOpacity"
+        static let glassMode = "settings.glassMode"
     }
 
     private let defaults: UserDefaults
@@ -137,6 +153,13 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var glassMode: ReminderGlassMode {
+        didSet {
+            defaults.set(glassMode.rawValue, forKey: Keys.glassMode)
+            notifyChange()
+        }
+    }
+
     var reminderStyle: ReminderStyle {
         ReminderStyle(
             fontSize: fontSize,
@@ -145,7 +168,8 @@ final class SettingsStore: ObservableObject {
             showIcon: showReminderIcon,
             windowScale: windowScale,
             backgroundColor: backgroundColor,
-            backgroundOpacity: backgroundOpacity
+            backgroundOpacity: backgroundOpacity,
+            glassMode: glassMode
         )
     }
 
@@ -162,6 +186,7 @@ final class SettingsStore: ObservableObject {
         backgroundColor = Self.loadColor(from: defaults.data(forKey: Keys.backgroundColor))
             ?? ReminderColorPreset.morandiPalette[0].color
         backgroundOpacity = CGFloat(defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? 0.82)
+        glassMode = ReminderGlassMode(rawValue: defaults.string(forKey: Keys.glassMode) ?? "") ?? .vivid
 
         fontSize = Self.clamp(fontSize, min: 44, max: 108)
         textOpacity = Self.clamp(textOpacity, min: 0.25, max: 1.0)

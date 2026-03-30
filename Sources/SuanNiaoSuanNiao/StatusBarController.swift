@@ -31,7 +31,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         // Keep a visible fallback when the icon cannot be loaded.
         button.title = showsImage ? "" : "蒜"
         button.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
-        button.contentTintColor = .labelColor
+        button.contentTintColor = showsImage ? nil : .labelColor
     }
 
     private func configureMenu() {

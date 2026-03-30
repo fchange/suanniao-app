@@ -138,7 +138,7 @@ final class ReminderPanelController: NSWindowController {
         let font = NSFont.systemFont(ofSize: style.fontSize, weight: .bold)
         let textSize = ("蒜鸟蒜鸟" as NSString).size(withAttributes: [.font: font])
         let scale = style.windowScale
-        let iconHeight: CGFloat = style.showIcon ? 94 : 18
+        let iconHeight: CGFloat = style.showIcon ? 118 : 18
         let width = max(360, ceil((textSize.width + 180) * scale))
         let height = max(200, ceil((textSize.height + 110 + iconHeight) * scale))
         let size = NSSize(width: width, height: height)

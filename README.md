@@ -48,6 +48,13 @@ make install
 make install INSTALL_DIR=/Applications
 ```
 
+生成发布包：
+
+```bash
+make package-zip VERSION=0.0.1
+make package-dmg VERSION=0.0.1
+```
+
 ## 资源文件
 
 音频资源：
@@ -59,18 +66,19 @@ Resources/Audio/suanniao.m4a
 
 图标资源：
 
-- `Resources/MenuBarIcon.png`：菜单栏模板图标
-- `Resources/BrandLogo.png`：应用内品牌图
+- `Resources/BrandMarkFilledCutout.png`：当前菜单栏图标
+- `Resources/BrandMarkOutline.png`：描边版品牌图标
+- `Resources/BrandMarkGradient.png`：应用内品牌图
 - `Resources/AppIcon.icns`：应用 bundle / Finder 图标
 - `Resources/InstallerIcon.icns`：安装包备用图标
-- `Resources/IconSources/`：原始图和图标母图
+- `Resources/IconSources/`：原始图与母版图标
 
 ## GitHub Actions
 
 仓库包含两条流水线：
 
 - `ci.yml`：在 `main` 和 Pull Request 上执行 `swift build` 与 `make build`
-- `release.yml`：在推送 `v*.*.*` tag 时构建 `.app`、压缩为 zip 并创建 GitHub Release
+- `release.yml`：在推送 `v*.*.*` tag 时构建 `.app`，发布 `zip` 和带 `Applications` 快捷方式的 `dmg`
 
 ## 版本
 
@@ -79,6 +87,7 @@ Resources/Audio/suanniao.m4a
 ## 签名与分发
 
 - 当前默认生成未签名 `.app`
+- Release 默认产出未签名 `zip` / `dmg`
 - 本地签名测试可执行：
 
 ```bash
@@ -86,3 +95,4 @@ codesign --deep --force --sign - build/蒜鸟蒜鸟.app
 ```
 
 - 正式分发建议使用 Apple Developer 证书签名并完成 notarization
+- 未签名版本首次打开时，用户需要在 Finder 中右键应用并选择“打开”，或在“系统设置 -> 隐私与安全性”中选择“仍要打开”

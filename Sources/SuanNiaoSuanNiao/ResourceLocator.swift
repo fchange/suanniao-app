@@ -20,14 +20,16 @@ enum ResourceLocator {
     static func statusBarImage() -> NSImage? {
         loadImage(
             candidates: [
-                ("MenuBarIcon", "pdf"),
-                ("MenuBarIcon", "png"),
+                ("BrandMarkFilledCutout", "pdf"),
+                ("BrandMarkFilledCutout", "png"),
+                ("BrandMarkOutline", "pdf"),
+                ("BrandMarkOutline", "png"),
                 ("StatusBarIcon", "pdf"),
                 ("StatusBarIcon", "png"),
-                ("BrandLogo", "pdf"),
-                ("BrandLogo", "png")
+                ("BrandMarkGradient", "pdf"),
+                ("BrandMarkGradient", "png")
             ],
-            template: true,
+            template: false,
             size: NSSize(width: 18, height: 18)
         )
     }
@@ -35,11 +37,13 @@ enum ResourceLocator {
     static func brandImage() -> NSImage? {
         loadImage(
             candidates: [
-                ("BrandLogo", "pdf"),
-                ("BrandLogo", "png"),
+                ("BrandMarkGradient", "pdf"),
+                ("BrandMarkGradient", "png"),
+                ("BrandMarkOutline", "pdf"),
+                ("BrandMarkOutline", "png"),
                 ("StatusBarIcon", "pdf"),
                 ("StatusBarIcon", "png"),
-                ("MenuBarIcon", "png")
+                ("BrandMarkFilledCutout", "png")
             ],
             template: false,
             size: nil
