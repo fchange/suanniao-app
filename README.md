@@ -51,8 +51,8 @@ make install INSTALL_DIR=/Applications
 生成发布包：
 
 ```bash
-make package-zip VERSION=0.0.1
-make package-dmg VERSION=0.0.1
+make package-zip VERSION=0.0.2
+make package-dmg VERSION=0.0.2
 ```
 
 ## 资源文件
@@ -82,7 +82,11 @@ Resources/Audio/suanniao.m4a
 
 ## 版本
 
-当前首个发布版本为 `0.0.1`。
+当前版本为 `0.0.2`。
+
+## 许可证
+
+本项目使用 `MIT` 许可证，详见 `LICENSE`。
 
 ## 签名与分发
 
