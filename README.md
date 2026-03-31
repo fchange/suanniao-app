@@ -10,6 +10,16 @@
 - 设置页可实时预览提醒效果
 - 已内置菜单栏图标、品牌图标、Dock 图标和 `.icns` 资源
 
+## 界面预览
+
+设置页：
+
+![设置页](Resources/README/settings-page.png)
+
+提醒页：
+
+![提醒页](Resources/README/reminder-page.png)
+
 ## 技术栈
 
 - Swift 6
