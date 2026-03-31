@@ -10,9 +10,9 @@ final class SettingsWindowController: NSWindowController {
 
         var title: String {
             switch self {
-            case .appearance: "提醒外观"
+            case .appearance: "常规"
             case .audio: "声音"
-            case .about: "关于蒜鸟"
+            case .about: "关于"
             }
         }
     }
@@ -25,7 +25,7 @@ final class SettingsWindowController: NSWindowController {
         self.settingsStore = settingsStore
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1020, height: 700),
+            contentRect: NSRect(x: 0, y: 0, width: 1220, height: 790),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
