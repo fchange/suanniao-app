@@ -14,12 +14,14 @@ struct ReminderStyle {
 }
 
 enum ReminderGlassMode: String, CaseIterable {
+    case clear
     case off
     case soft
     case vivid
 
     var title: String {
         switch self {
+        case .clear: "透明"
         case .off: "关闭"
         case .soft: "柔和"
         case .vivid: "明显"

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(swift build:*)",
+      "Bash(open:*)",
+      "Bash(osascript -e 'tell application \"\"System Events\"\" to tell process \"\"SuanNiaoSuanNiao\"\" to click menu bar item 1 of menu bar 1')",
+      "Bash(xcodebuild -scheme SuanNiaoSuanNiao -configuration Debug)"
+    ]
+  }
+}

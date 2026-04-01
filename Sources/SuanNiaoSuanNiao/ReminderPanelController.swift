@@ -33,13 +33,17 @@ final class ReminderPanelController: NSWindowController {
     func presentReminder() {
         guard let panel = window else { return }
 
+        let style = settingsStore.reminderStyle
+        let usesFrameMotion = style.glassMode != .clear
         refreshContent()
 
         let targetFrame = makeTargetFrame()
-        let startFrame = targetFrame.insetBy(
-            dx: targetFrame.width * 0.05,
-            dy: targetFrame.height * 0.05
-        )
+        let startFrame = usesFrameMotion
+            ? targetFrame.insetBy(
+                dx: targetFrame.width * 0.05,
+                dy: targetFrame.height * 0.05
+            )
+            : targetFrame
 
         hideWorkItem?.cancel()
         panel.alphaValue = 0
@@ -50,7 +54,9 @@ final class ReminderPanelController: NSWindowController {
             context.duration = 0.24
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             panel.animator().alphaValue = 1
-            panel.animator().setFrame(targetFrame, display: true)
+            if usesFrameMotion {
+                panel.animator().setFrame(targetFrame, display: true)
+            }
         }
 
         let workItem = DispatchWorkItem { [weak self] in
@@ -71,16 +77,21 @@ final class ReminderPanelController: NSWindowController {
     private func dismissReminder() {
         guard let panel = window else { return }
 
-        let endFrame = panel.frame.insetBy(
-            dx: panel.frame.width * 0.03,
-            dy: panel.frame.height * 0.03
-        )
+        let usesFrameMotion = settingsStore.reminderStyle.glassMode != .clear
+        let endFrame = usesFrameMotion
+            ? panel.frame.insetBy(
+                dx: panel.frame.width * 0.03,
+                dy: panel.frame.height * 0.03
+            )
+            : panel.frame
 
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.18
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
             panel.animator().alphaValue = 0
-            panel.animator().setFrame(endFrame, display: true)
+            if usesFrameMotion {
+                panel.animator().setFrame(endFrame, display: true)
+            }
         }, completionHandler: {
             DispatchQueue.main.async {
                 panel.orderOut(nil)

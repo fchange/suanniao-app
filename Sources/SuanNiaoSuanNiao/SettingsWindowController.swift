@@ -25,17 +25,21 @@ final class SettingsWindowController: NSWindowController {
         self.settingsStore = settingsStore
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1220, height: 790),
-            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+            contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "蒜鸟蒜鸟"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.backgroundColor = .clear
+        window.isOpaque = false
         window.isReleasedWhenClosed = false
-        window.isMovableByWindowBackground = true
-        window.toolbarStyle = .preference
+        // Prevent control drags (e.g. Slider) from being interpreted as window dragging.
+        window.isMovableByWindowBackground = false
+        window.toolbarStyle = .unified
+        window.minSize = NSSize(width: 1060, height: 700)
         window.center()
 
         super.init(window: window)

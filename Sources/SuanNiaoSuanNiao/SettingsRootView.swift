@@ -1,21 +1,14 @@
 import AppKit
 import SwiftUI
 
-private enum SettingsUI {
-    static let windowBackground = Color(red: 0.95, green: 0.95, blue: 0.96)
-    static let frameBackground = Color.white
-    static let sidebarBackground = Color(red: 0.985, green: 0.985, blue: 0.985)
-    static let detailBackground = Color.white
-    static let rowHighlight = Color(red: 0.94, green: 0.94, blue: 0.95)
-    static let rowControlBackground = Color(red: 0.965, green: 0.965, blue: 0.965)
-    static let border = Color.black.opacity(0.08)
-    static let separator = Color.black.opacity(0.075)
-    static let primaryText = Color(nsColor: .labelColor)
-    static let secondaryText = Color(nsColor: .secondaryLabelColor)
-    static let tertiaryText = Color(nsColor: .tertiaryLabelColor)
-    static let outerCorner: CGFloat = 26
-    static let groupCorner: CGFloat = 14
-    static let controlCorner: CGFloat = 11
+private enum SettingsTheme {
+    static let canvasTop = Color(red: 0.95, green: 0.97, blue: 0.995)
+    static let canvasBottom = Color(red: 0.90, green: 0.93, blue: 0.98)
+    static let text = Color(nsColor: .labelColor)
+    static let textSub = Color(nsColor: .secondaryLabelColor)
+    static let sidebarTint = Color.white.opacity(0.001)
+    static let sectionTint = Color.white.opacity(0.001)
+    static let groupTint = Color.white.opacity(0.001)
 }
 
 struct SettingsRootView: View {
@@ -24,135 +17,115 @@ struct SettingsRootView: View {
 
     var body: some View {
         ZStack {
-            SettingsUI.windowBackground
-                .ignoresSafeArea()
-
-            HStack(spacing: 0) {
-                sidebar
-                    .frame(width: 268)
-
-                Rectangle()
-                    .fill(SettingsUI.separator)
-                    .frame(width: 1)
-
-                detailContainer
-            }
-            .background(SettingsUI.frameBackground, in: RoundedRectangle(cornerRadius: SettingsUI.outerCorner, style: .continuous))
-            .clipShape(RoundedRectangle(cornerRadius: SettingsUI.outerCorner, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: SettingsUI.outerCorner, style: .continuous)
-                    .stroke(SettingsUI.border, lineWidth: 1)
+            LinearGradient(
+                colors: [SettingsTheme.canvasTop, SettingsTheme.canvasBottom],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
-            .padding(6)
-        }
-    }
+            .ignoresSafeArea()
 
-    private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Button(action: closeSettingsWindow) {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("返回应用")
-                        .font(.system(size: 13, weight: .medium))
-                }
-                .foregroundStyle(SettingsUI.secondaryText)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 18)
-            .padding(.top, 18)
-
-            VStack(spacing: 4) {
-                ForEach(SettingsWindowController.Section.allCases, id: \.self) { section in
-                    sidebarButton(for: section)
-                }
-            }
-            .padding(.horizontal, 10)
-
-            Spacer(minLength: 0)
-
-            HStack(spacing: 8) {
-                Group {
-                    if let image = ResourceLocator.brandImage() {
-                        Image(nsImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(4)
-                    } else {
-                        Image(systemName: "bird.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(SettingsUI.primaryText)
-                    }
-                }
-                .frame(width: 20, height: 20)
-                .background(Color.white, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(SettingsUI.border, lineWidth: 1)
+            HStack(spacing: 24) {
+                SettingsSidebar(
+                    selectedSection: selection.section,
+                    onSelectSection: selectSection
                 )
+                .frame(width: 220)
 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("蒜鸟蒜鸟")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(SettingsUI.secondaryText)
-                    Text("设置")
-                        .font(.system(size: 11))
-                        .foregroundStyle(SettingsUI.tertiaryText)
+                SettingsDetailContent(
+                    section: selection.section,
+                    settingsStore: settingsStore
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .padding(24)
+        }
+    }
+
+    private func selectSection(_ section: SettingsWindowController.Section) {
+        withAnimation(.snappy(duration: 0.2)) {
+            selection.section = section
+        }
+    }
+}
+
+private struct SettingsSidebar: View {
+    let selectedSection: SettingsWindowController.Section
+    let onSelectSection: (SettingsWindowController.Section) -> Void
+
+    var body: some View {
+        LiquidGlassContainer(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("设置")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(SettingsTheme.textSub)
+                    .padding(.bottom, 4)
+
+                ForEach(SettingsWindowController.Section.allCases, id: \.self) { section in
+                    SettingsSidebarButton(
+                        section: section,
+                        isSelected: selectedSection == section,
+                        onTap: { onSelectSection(section) }
+                    )
                 }
+
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 18)
-            .padding(.bottom, 18)
+            .padding(16)
+            .background(SettingsTheme.sidebarTint, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .liquidGlassCard(cornerRadius: 20)
         }
-        .background(SettingsUI.sidebarBackground)
     }
+}
 
-    private var detailContainer: some View {
-        Group {
-            switch selection.section {
-            case .appearance:
-                AppearanceSettingsView(settingsStore: settingsStore)
-            case .audio:
-                AudioSettingsView(settingsStore: settingsStore)
-            case .about:
-                AboutSettingsView()
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(SettingsUI.detailBackground)
-    }
+private struct SettingsSidebarButton: View {
+    let section: SettingsWindowController.Section
+    let isSelected: Bool
+    let onTap: () -> Void
 
-    private func sidebarButton(for section: SettingsWindowController.Section) -> some View {
-        let isSelected = selection.section == section
-
-        return Button {
-            withAnimation(.easeInOut(duration: 0.16)) {
-                selection.section = section
-            }
-        } label: {
-            HStack(spacing: 12) {
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 10) {
                 Image(systemName: section.icon)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(isSelected ? SettingsUI.primaryText : SettingsUI.secondaryText)
-                    .frame(width: 18)
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(width: 16)
 
                 Text(section.title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(SettingsUI.primaryText)
+                    .font(.system(size: 15, weight: isSelected ? .semibold : .medium))
 
-                Spacer(minLength: 10)
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 12)
+            .foregroundStyle(isSelected ? SettingsTheme.text : SettingsTheme.textSub)
             .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? SettingsUI.rowHighlight : .clear)
+                isSelected ? SettingsTheme.sectionTint : Color.clear,
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
             )
+            .liquidGlassCard(cornerRadius: 12, isEnabled: isSelected)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
 
-    private func closeSettingsWindow() {
-        NSApp.keyWindow?.performClose(nil)
+private struct SettingsDetailContent: View {
+    let section: SettingsWindowController.Section
+    @ObservedObject var settingsStore: SettingsStore
+
+    var body: some View {
+        ZStack {
+            AppearanceSettingsView(settingsStore: settingsStore)
+                .sectionVisibility(section == .appearance)
+
+            AudioSettingsView(settingsStore: settingsStore)
+                .sectionVisibility(section == .audio)
+
+            AboutSettingsView()
+                .sectionVisibility(section == .about)
+        }
+        .animation(.snappy(duration: 0.2), value: section)
     }
 }
 
@@ -161,104 +134,72 @@ private struct AppearanceSettingsView: View {
 
     var body: some View {
         SettingsPage(title: "常规") {
-            SettingsGroup {
-                SettingsPreviewRow(
-                    title: "实时预览",
-                    subtitle: "当前提醒样式会立即显示在这里。",
-                    style: settingsStore.reminderStyle,
-                    brandImage: ResourceLocator.brandImage()
-                )
-
-                SettingsSliderRow(
-                    title: "提醒窗口大小",
-                    subtitle: "调整提醒面板整体缩放比例。",
-                    value: Binding(
-                        get: { settingsStore.windowScale },
-                        set: { settingsStore.windowScale = $0 }
-                    ),
-                    range: 0.8...1.55,
-                    displayValue: "\(Int((settingsStore.windowScale * 100).rounded()))%"
-                )
-
-                SettingsToggleRow(
-                    title: "显示品牌图标",
-                    subtitle: "在提醒文字前显示蒜鸟图标。",
-                    isOn: $settingsStore.showReminderIcon
-                )
-
-                SettingsSegmentedRow(
-                    title: "磨砂玻璃",
-                    subtitle: "调节提醒卡片的玻璃质感层级。",
-                    selection: $settingsStore.glassMode,
-                    options: ReminderGlassMode.allCases,
-                    showsDivider: false
-                ) { mode in
-                    mode.title
-                }
+            SettingsGlassGroup {
+                ReminderPanelContentView(style: settingsStore.reminderStyle, brandImage: ResourceLocator.brandImage())
+                    .frame(height: 210)
             }
 
-            SettingsGroup(title: "外观") {
-                SettingsSliderRow(
-                    title: "字体大小",
-                    subtitle: "设置提醒文本字号。",
-                    value: Binding(
-                        get: { settingsStore.fontSize },
-                        set: { settingsStore.fontSize = $0 }
-                    ),
-                    range: 44...108,
-                    displayValue: "\(Int(settingsStore.fontSize.rounded())) pt"
-                )
+            SettingsGlassGroup {
+                SettingRow(label: "窗口大小") {
+                    Slider(value: $settingsStore.windowScale, in: 0.8...1.55)
+                        .frame(width: 180)
+                    Text("\(Int((settingsStore.windowScale * 100).rounded()))%")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(SettingsTheme.textSub)
+                        .frame(width: 50, alignment: .trailing)
+                }
 
-                SettingsSliderRow(
-                    title: "文字透明度",
-                    subtitle: "控制提醒文本可见度。",
-                    value: Binding(
-                        get: { settingsStore.textOpacity },
-                        set: { settingsStore.textOpacity = $0 }
-                    ),
-                    range: 0.25...1.0,
-                    displayValue: "\(Int((settingsStore.textOpacity * 100).rounded()))%"
-                )
+                SettingRow(label: "显示图标") {
+                    Toggle("", isOn: $settingsStore.showReminderIcon)
+                        .labelsHidden()
+                }
 
-                SettingsColorRow(
-                    title: "文字颜色",
-                    subtitle: "选择提醒文案颜色。",
-                    selection: Binding(
+                SettingRow(label: "玻璃效果") {
+                    Picker("", selection: $settingsStore.glassMode) {
+                        ForEach(ReminderGlassMode.allCases, id: \.self) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 240)
+                }
+
+                SettingRow(label: "字体大小") {
+                    Slider(value: $settingsStore.fontSize, in: 44...108)
+                        .frame(width: 180)
+                    Text("\(Int(settingsStore.fontSize.rounded())) pt")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(SettingsTheme.textSub)
+                        .frame(width: 50, alignment: .trailing)
+                }
+
+                SettingRow(label: "文字颜色") {
+                    ColorPicker("", selection: Binding(
                         get: { settingsStore.textColor.swiftUIColor },
                         set: { settingsStore.textColor = NSColor($0) ?? settingsStore.textColor }
-                    ),
-                    hex: settingsStore.textColor.hexString
-                )
+                    ), supportsOpacity: false)
+                    .labelsHidden()
+                }
 
-                SettingsColorRow(
-                    title: "提醒背景色",
-                    subtitle: "调整提醒面板基础底色。",
-                    selection: Binding(
+                SettingRow(label: "背景颜色") {
+                    ColorPicker("", selection: Binding(
                         get: { settingsStore.backgroundColor.swiftUIColor },
                         set: { settingsStore.backgroundColor = NSColor($0) ?? settingsStore.backgroundColor }
-                    ),
-                    hex: settingsStore.backgroundColor.hexString
-                )
+                    ), supportsOpacity: false)
+                    .labelsHidden()
+                }
 
-                SettingsSliderRow(
-                    title: "背景透明度",
-                    subtitle: "控制背景底色透明程度。",
-                    value: Binding(
-                        get: { settingsStore.backgroundOpacity },
-                        set: { settingsStore.backgroundOpacity = $0 }
-                    ),
-                    range: 0.2...1.0,
-                    displayValue: "\(Int((settingsStore.backgroundOpacity * 100).rounded()))%"
-                )
-
-                PresetPaletteRow(
-                    title: "颜色预设",
-                    subtitle: "快速切换一组常用风格。",
-                    presets: ReminderColorPreset.morandiPalette,
-                    selectedHex: settingsStore.backgroundColor.hexString,
-                    showsDivider: false
-                ) { preset in
-                    settingsStore.applyPreset(preset)
+                SettingRow(label: "颜色预设") {
+                    HStack(spacing: 8) {
+                        ForEach(ReminderColorPreset.morandiPalette) { preset in
+                            ColorPresetButton(
+                                preset: preset,
+                                isSelected: settingsStore.backgroundColor.isEqual(to: preset.color),
+                                onSelect: { settingsStore.applyPreset(preset) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -270,36 +211,25 @@ private struct AudioSettingsView: View {
 
     var body: some View {
         SettingsPage(title: "声音") {
-            SettingsGroup {
-                SettingsSliderRow(
-                    title: "提醒音量",
-                    subtitle: "控制点击菜单栏后播放音量。",
-                    value: Binding(
-                        get: { Double(settingsStore.audioVolume) },
-                        set: { settingsStore.audioVolume = Float($0) }
-                    ),
-                    range: 0...1,
-                    displayValue: "\(Int((CGFloat(settingsStore.audioVolume) * 100).rounded()))%"
-                )
+            SettingsGlassGroup {
+                SettingRow(label: "音量") {
+                    Slider(
+                        value: Binding(
+                            get: { Double(settingsStore.audioVolume) },
+                            set: { settingsStore.audioVolume = Float($0) }
+                        ),
+                        in: 0...1
+                    )
+                    .frame(width: 180)
 
-                ReadOnlyRow(
-                    title: "音频文件",
-                    subtitle: "默认读取以下文件路径。",
-                    value: "Resources/Audio/suanniao.mp3"
-                )
+                    Text("\(Int((CGFloat(settingsStore.audioVolume) * 100).rounded()))%")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(SettingsTheme.textSub)
+                        .frame(width: 50, alignment: .trailing)
+                }
 
-                ReadOnlyRow(
-                    title: "播放方式",
-                    subtitle: "触发时机",
-                    value: "点击菜单栏图标时播放"
-                )
-
-                ReadOnlyRow(
-                    title: "替换说明",
-                    subtitle: "保持文件名不变即可热替换。",
-                    value: "保持文件名不变即可",
-                    showsDivider: false
-                )
+                InfoRow(label: "音频文件", value: "suanniao.mp3")
+                InfoRow(label: "触发时机", value: "点击菜单栏")
             }
         }
     }
@@ -308,31 +238,18 @@ private struct AudioSettingsView: View {
 private struct AboutSettingsView: View {
     var body: some View {
         SettingsPage(title: "关于") {
-            SettingsGroup {
-                ReadOnlyRow(
-                    title: "应用名称",
-                    subtitle: nil,
-                    value: "蒜鸟蒜鸟"
-                )
+            SettingsGlassGroup {
+                InfoRow(label: "应用", value: "蒜鸟蒜鸟")
+                InfoRow(label: "版本", value: appVersionText)
+                InfoRow(label: "平台", value: "macOS 14+")
+            }
 
-                ReadOnlyRow(
-                    title: "版本",
-                    subtitle: "当前构建版本。",
-                    value: appVersionText
-                )
-
-                ReadOnlyRow(
-                    title: "平台",
-                    subtitle: nil,
-                    value: "macOS 14 及以上"
-                )
-
-                TextBlockRow(
-                    title: "说明",
-                    subtitle: "产品理念",
-                    text: "“蒜鸟蒜鸟”来自武汉方言里的“算了”。这个应用希望在情绪上头的时候，用更柔和的方式提醒你停一下。",
-                    showsDivider: false
-                )
+            SettingsGlassGroup {
+                Text("「蒜鸟蒜鸟」来自武汉方言里的「算了」。这个应用希望在情绪上头的时候，用更柔和的方式提醒你停一下。")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(SettingsTheme.textSub)
+                    .lineSpacing(4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -356,341 +273,104 @@ private struct SettingsPage<Content: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                Text(title)
-                    .font(.system(size: 40, weight: .bold))
-                    .foregroundStyle(SettingsUI.primaryText)
+            LiquidGlassContainer(spacing: 20) {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(title)
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundStyle(SettingsTheme.text)
 
-                content
+                    content
+                }
+                .padding(32)
             }
-            .padding(.horizontal, 32)
-            .padding(.top, 30)
-            .padding(.bottom, 28)
         }
         .scrollIndicators(.hidden)
     }
 }
 
-private struct SettingsGroup<Content: View>: View {
-    let title: String?
+private struct SettingsGlassGroup<Content: View>: View {
     let content: Content
 
-    init(title: String? = nil, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let title, !title.isEmpty {
-                Text(title)
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(SettingsUI.primaryText)
-                    .padding(.top, 4)
-            }
-
-            VStack(spacing: 0) {
-                content
-            }
-            .background(Color.white)
-            .overlay(
-                RoundedRectangle(cornerRadius: SettingsUI.groupCorner, style: .continuous)
-                    .stroke(SettingsUI.border, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: SettingsUI.groupCorner, style: .continuous))
-        }
-    }
-}
-
-private struct SettingsRowContainer<Content: View>: View {
-    let content: Content
-    var showsDivider: Bool = true
-
-    init(showsDivider: Bool = true, @ViewBuilder content: () -> Content) {
-        self.showsDivider = showsDivider
+    init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
     var body: some View {
         VStack(spacing: 0) {
             content
-                .padding(.horizontal, 22)
-                .padding(.vertical, 16)
-
-            if showsDivider {
-                Rectangle()
-                    .fill(SettingsUI.separator)
-                    .frame(height: 1)
-            }
         }
+        .padding(16)
+        .background(SettingsTheme.groupTint, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .liquidGlassCard(cornerRadius: 18)
     }
 }
 
-private struct SettingLabel: View {
-    let title: String
-    let subtitle: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(SettingsUI.primaryText)
-
-            if let subtitle, !subtitle.isEmpty {
-                Text(subtitle)
-                    .font(.system(size: 12))
-                    .foregroundStyle(SettingsUI.secondaryText)
-            }
-        }
-    }
-}
-
-private struct SettingControlSurface<Content: View>: View {
+private struct SettingRow<Content: View>: View {
+    let label: String
     let content: Content
-    var minWidth: CGFloat? = nil
-    var maxWidth: CGFloat? = nil
-    var alignment: Alignment = .leading
 
-    init(minWidth: CGFloat? = nil, maxWidth: CGFloat? = nil, alignment: Alignment = .leading, @ViewBuilder content: () -> Content) {
-        self.minWidth = minWidth
-        self.maxWidth = maxWidth
-        self.alignment = alignment
+    init(label: String, @ViewBuilder content: () -> Content) {
+        self.label = label
         self.content = content()
     }
 
     var body: some View {
-        content
-            .padding(.horizontal, 12)
-            .frame(minWidth: minWidth, maxWidth: maxWidth, minHeight: 40, alignment: alignment)
-            .background(
-                RoundedRectangle(cornerRadius: SettingsUI.controlCorner, style: .continuous)
-                    .fill(SettingsUI.rowControlBackground)
-            )
-    }
-}
-
-private struct SettingsPreviewRow: View {
-    let title: String
-    let subtitle: String
-    let style: ReminderStyle
-    let brandImage: NSImage?
-
-    var body: some View {
-        SettingsRowContainer {
-            VStack(alignment: .leading, spacing: 14) {
-                SettingLabel(title: title, subtitle: subtitle)
-
-                ReminderPanelContentView(style: style, brandImage: brandImage)
-                    .frame(height: 248)
-            }
+        HStack {
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(SettingsTheme.text)
+            Spacer()
+            content
         }
+        .padding(.vertical, 12)
     }
 }
 
-private struct SettingsSliderRow<V>: View where V: BinaryFloatingPoint, V.Stride: BinaryFloatingPoint {
-    let title: String
-    let subtitle: String?
-    let value: Binding<V>
-    let range: ClosedRange<V>
-    let displayValue: String
-    var showsDivider: Bool = true
-
-    var body: some View {
-        SettingsRowContainer(showsDivider: showsDivider) {
-            HStack(alignment: .center, spacing: 24) {
-                SettingLabel(title: title, subtitle: subtitle)
-
-                Spacer(minLength: 20)
-
-                SettingControlSurface(minWidth: 304, alignment: .center) {
-                    HStack(spacing: 12) {
-                        Slider(value: value, in: range)
-                            .frame(width: 204)
-
-                        Text(displayValue)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(SettingsUI.secondaryText)
-                            .frame(width: 68, alignment: .trailing)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct SettingsToggleRow: View {
-    let title: String
-    let subtitle: String?
-    @Binding var isOn: Bool
-    var showsDivider: Bool = true
-
-    var body: some View {
-        SettingsRowContainer(showsDivider: showsDivider) {
-            HStack {
-                SettingLabel(title: title, subtitle: subtitle)
-
-                Spacer(minLength: 20)
-
-                Toggle("", isOn: $isOn)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-            }
-        }
-    }
-}
-
-private struct SettingsSegmentedRow<Option>: View where Option: Hashable {
-    let title: String
-    let subtitle: String?
-    @Binding var selection: Option
-    let options: [Option]
-    var showsDivider: Bool = true
-    let label: (Option) -> String
-
-    var body: some View {
-        SettingsRowContainer(showsDivider: showsDivider) {
-            HStack {
-                SettingLabel(title: title, subtitle: subtitle)
-
-                Spacer(minLength: 20)
-
-                SettingControlSurface(minWidth: 264, alignment: .center) {
-                    Picker(title, selection: $selection) {
-                        ForEach(options, id: \.self) { option in
-                            Text(label(option)).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                }
-            }
-        }
-    }
-}
-
-private struct SettingsColorRow: View {
-    let title: String
-    let subtitle: String?
-    let selection: Binding<Color>
-    let hex: String
-    var showsDivider: Bool = true
-
-    var body: some View {
-        SettingsRowContainer(showsDivider: showsDivider) {
-            HStack {
-                SettingLabel(title: title, subtitle: subtitle)
-
-                Spacer(minLength: 20)
-
-                SettingControlSurface(minWidth: 180, alignment: .center) {
-                    HStack(spacing: 12) {
-                        Text(hex)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(SettingsUI.secondaryText)
-
-                        ColorPicker("", selection: selection, supportsOpacity: false)
-                            .labelsHidden()
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct PresetPaletteRow: View {
-    let title: String
-    let subtitle: String?
-    let presets: [ReminderColorPreset]
-    let selectedHex: String
-    var showsDivider: Bool = false
-    let action: (ReminderColorPreset) -> Void
-
-    var body: some View {
-        SettingsRowContainer(showsDivider: showsDivider) {
-            HStack(alignment: .top, spacing: 20) {
-                SettingLabel(title: title, subtitle: subtitle)
-                    .padding(.top, 2)
-
-                Spacer(minLength: 20)
-
-                SettingControlSurface(minWidth: 174, alignment: .center) {
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(40), spacing: 8), count: 3), spacing: 8) {
-                        ForEach(presets) { preset in
-                            let isSelected = preset.color.hexString == selectedHex
-
-                            Button {
-                                action(preset)
-                            } label: {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(preset.color.swiftUIColor)
-
-                                    Text("蒜")
-                                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                                        .foregroundStyle(preset.textColor.swiftUIColor)
-                                }
-                                .frame(width: 40, height: 40)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .stroke(isSelected ? SettingsUI.primaryText : SettingsUI.border, lineWidth: isSelected ? 2 : 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .help(preset.name)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct ReadOnlyRow: View {
-    let title: String
-    let subtitle: String?
+private struct InfoRow: View {
+    let label: String
     let value: String
-    var showsDivider: Bool = true
 
     var body: some View {
-        SettingsRowContainer(showsDivider: showsDivider) {
-            HStack(spacing: 18) {
-                SettingLabel(title: title, subtitle: subtitle)
-
-                Spacer(minLength: 16)
-
-                SettingControlSurface(minWidth: 264, maxWidth: 328, alignment: .trailing) {
-                    Text(value)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(SettingsUI.secondaryText)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-            }
+        HStack {
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(SettingsTheme.text)
+            Spacer()
+            Text(value)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(SettingsTheme.textSub)
         }
+        .padding(.vertical, 12)
     }
 }
 
-private struct TextBlockRow: View {
-    let title: String
-    let subtitle: String?
-    let text: String
-    var showsDivider: Bool = false
+private struct ColorPresetButton: View {
+    let preset: ReminderColorPreset
+    let isSelected: Bool
+    let onSelect: () -> Void
 
     var body: some View {
-        SettingsRowContainer(showsDivider: showsDivider) {
-            HStack(alignment: .top, spacing: 20) {
-                SettingLabel(title: title, subtitle: subtitle)
-                    .padding(.top, 2)
-
-                Spacer(minLength: 20)
-
-                Text(text)
-                    .font(.system(size: 14))
-                    .foregroundStyle(SettingsUI.secondaryText)
-                    .multilineTextAlignment(.leading)
-                    .frame(width: 360, alignment: .leading)
-            }
+        Button(action: onSelect) {
+            Circle()
+                .fill(preset.color.swiftUIColor)
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Circle().stroke(
+                        isSelected ? Color.white.opacity(0.9) : Color.white.opacity(0.4),
+                        lineWidth: isSelected ? 2 : 1
+                    )
+                )
+                .liquidGlass(in: AnyShape(Circle()), isEnabled: isSelected)
         }
+        .buttonStyle(.plain)
+    }
+}
+
+private extension View {
+    func sectionVisibility(_ isVisible: Bool) -> some View {
+        opacity(isVisible ? 1 : 0)
+            .allowsHitTesting(isVisible)
+            .accessibilityHidden(!isVisible)
     }
 }
 
@@ -708,5 +388,19 @@ private extension NSColor {
     convenience init?(_ color: Color) {
         guard let cgColor = color.cgColor else { return nil }
         self.init(cgColor: cgColor)
+    }
+
+    func isEqual(to color: NSColor) -> Bool {
+        guard
+            let lhs = usingColorSpace(.deviceRGB),
+            let rhs = color.usingColorSpace(.deviceRGB)
+        else {
+            return self == color
+        }
+
+        return abs(lhs.redComponent - rhs.redComponent) < 0.002
+            && abs(lhs.greenComponent - rhs.greenComponent) < 0.002
+            && abs(lhs.blueComponent - rhs.blueComponent) < 0.002
+            && abs(lhs.alphaComponent - rhs.alphaComponent) < 0.002
     }
 }
