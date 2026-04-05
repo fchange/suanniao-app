@@ -4,17 +4,10 @@ import SwiftUI
 @MainActor
 final class SettingsWindowController: NSWindowController {
     enum Section: String, CaseIterable, Hashable {
+        case general
         case appearance
-        case audio
+        case hotkeys
         case about
-
-        var title: String {
-            switch self {
-            case .appearance: "常规"
-            case .audio: "声音"
-            case .about: "关于"
-            }
-        }
     }
 
     private let settingsStore: SettingsStore
@@ -25,7 +18,7 @@ final class SettingsWindowController: NSWindowController {
         self.settingsStore = settingsStore
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
+            contentRect: NSRect(x: 0, y: 0, width: 1120, height: 760),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -39,7 +32,7 @@ final class SettingsWindowController: NSWindowController {
         // Prevent control drags (e.g. Slider) from being interpreted as window dragging.
         window.isMovableByWindowBackground = false
         window.toolbarStyle = .unified
-        window.minSize = NSSize(width: 1060, height: 700)
+        window.minSize = NSSize(width: 1040, height: 720)
         window.center()
 
         super.init(window: window)
